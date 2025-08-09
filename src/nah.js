@@ -1,6 +1,12 @@
 // keep running so when new videos appear, ie. on page scroll, we add button to them as well
 setInterval(() => {
+    // subscriptions
     addNahBtns("ytd-rich-grid-media #details");
+
+    // homepage, recommended videos
+    addNahBtns("yt-lockup-metadata-view-model");
+
+    // not sure if this is needed anymore
     addNahBtns("ytd-compact-video-renderer #dismissible .details");
 }, 2000);
 
@@ -110,57 +116,94 @@ function actionNah(svgPath) {
         // prevent popup from appearing when custom button is pressed
         const popupWrapper = document.querySelector("ytd-popup-container");
         popupWrapper.classList.add("hide-popup");
-        event.target.parentElement
-            .querySelector("#menu #button yt-icon")
-            .click();
+        const menuButtonSelectors = [
+            // subscriptions page
+            "#menu #button yt-icon",
+
+            // homepage, recommended videos
+            ".yt-lockup-metadata-view-model-wiz__menu-button button",
+        ];
+        const menuButton = event.target.parentElement.querySelector(
+            menuButtonSelectors.join(",")
+        );
+
+        menuButton.click();
 
         // ..wait for popup to render using artificial delay
         setTimeout(async () => {
-            const popupNode = popupWrapper.querySelector(
-                `ytd-menu-popup-renderer #items`
-            );
-            if (!popupNode) {
-                logger("Could not find popup menu in DOM");
-                return;
-            }
-            let buttonChildIndex;
-            const popupMenuChildren = Array.from(popupNode.children);
-            for (let i = 0; i < popupMenuChildren.length; i++) {
-                const childNode = popupMenuChildren[i];
-                const svgCandidate = childNode.querySelector(
-                    "ytd-menu-service-item-renderer tp-yt-paper-item yt-icon span div svg"
+            try {
+                const popupSelectors = [
+                    // subscriptions
+                    "ytd-menu-popup-renderer #items",
+
+                    // homepage, recommended videos
+                    "yt-list-view-model.yt-list-view-model-wiz",
+                ];
+                const popupNode = popupWrapper.querySelector(
+                    popupSelectors.join(",")
                 );
-                logger(childNode);
-                logger(childNode.textContent.trim());
-                logger(svgCandidate);
-                if (!svgCandidate) continue;
-                logger(svgCandidate.innerHTML);
-                const isCandidateCorrectButton = svgCandidate.innerHTML
-                    .trim()
-                    .indexOf(svgPath);
-                if (isCandidateCorrectButton !== -1) {
-                    logger(`found button at index ${i}`);
-                    buttonChildIndex = i;
-                    break;
+
+                if (!popupNode) {
+                    logger("Could not find popup menu in DOM");
+                    return;
                 }
-            }
+                let buttonChildIndex;
+                const popupMenuChildren = Array.from(popupNode.children);
+                for (let i = 0; i < popupMenuChildren.length; i++) {
+                    const childNode = popupMenuChildren[i];
+                    const svgCandidateSelectors = [
+                        // subscriptions
+                        "ytd-menu-service-item-renderer tp-yt-paper-item yt-icon span div svg",
 
-            if (!buttonChildIndex) {
-                logger("Could not find button in DOM");
-                return;
-            }
-            // nth-child css selector index is 1-based
-            buttonChildIndex += 1;
+                        // homepage, recommended videos
+                        ".yt-list-item-view-model-wiz__container svg",
+                    ];
+                    const svgCandidate = childNode.querySelector(
+                        svgCandidateSelectors.join(",")
+                    );
 
-            const notInterestedBtn = popupWrapper.querySelector(
-                `ytd-menu-popup-renderer #items > ytd-menu-service-item-renderer:nth-child(${buttonChildIndex})`
-            );
+                    logger(childNode);
+                    logger(childNode.textContent.trim());
+                    logger(svgCandidate);
+                    if (!svgCandidate) continue;
+                    logger(svgCandidate.innerHTML);
+                    const isCandidateCorrectButton = svgCandidate.innerHTML
+                        .trim()
+                        .indexOf(svgPath);
+                    if (isCandidateCorrectButton !== -1) {
+                        logger(`found button at index ${i}`);
+                        buttonChildIndex = i;
+                        break;
+                    }
+                }
 
-            if (notInterestedBtn) {
-                logger("clicking", notInterestedBtn.textContent.trim());
-                notInterestedBtn.click();
+                if (!buttonChildIndex) {
+                    logger("Could not find button in DOM");
+                    return;
+                }
+                // nth-child css selector index is 1-based
+                buttonChildIndex += 1;
+
+                const selectors = [
+                    // subscriptions
+                    `ytd-menu-popup-renderer #items > ytd-menu-service-item-renderer:nth-child(${buttonChildIndex})`,
+
+                    // homepage, recommended videos
+                    `:nth-child(${buttonChildIndex})`,
+                ];
+                const notInterestedBtn = popupWrapper.querySelector(
+                    selectors.join(",")
+                );
+
+                if (notInterestedBtn) {
+                    logger("clicking", notInterestedBtn.textContent.trim());
+                    notInterestedBtn.click();
+                } else {
+                    logger("could not find notInterestedBtn");
+                }
+            } finally {
+                popupWrapper.classList.remove("hide-popup");
             }
-            popupWrapper.classList.remove("hide-popup");
         }, 100);
 
         return false;
