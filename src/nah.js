@@ -1,3 +1,8 @@
+const NAH_SVG =
+    "M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zM3 12c0 2.31.87 4.41 2.29 6L18 5.29C16.41 3.87 14.31 3 12 3c-4.97 0-9 4.03-9 9zm15.71-6L6 18.71C7.59 20.13 9.69 21 12 21c4.97 0 9-4.03 9-9 0-2.31-.87-4.41-2.29-6z";
+const CHANNEL_SVG =
+    "M12 3c-4.96 0-9 4.04-9 9s4.04 9 9 9 9-4.04 9-9-4.04-9-9-9m0-1c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm7 11H5v-2h14v2z";
+
 // keep running so when new videos appear, ie. on page scroll, we add button to them as well
 setInterval(() => {
     // subscriptions
@@ -19,6 +24,7 @@ const baseStyles = `
         border: none;
         cursor: pointer;
         opacity: 0.5;
+        color: #f1f1f1;
     }
     .nah-btn:hover {
         opacity: 1;
@@ -63,19 +69,17 @@ async function logger(...data) {
 }
 
 async function addNahBtns(videoBoxSelector) {
+    const nahButtonLabel = await getFromStorage("nahButtonLabel");
     const nahButton = {
-        onClick: actionNah(
-            "M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zM3 12c0 2.31.87 4.41 2.29 6L18 5.29C16.41 3.87 14.31 3 12 3c-4.97 0-9 4.03-9 9zm15.71-6L6 18.71C7.59 20.13 9.69 21 12 21c4.97 0 9-4.03 9-9 0-2.31-.87-4.41-2.29-6z"
-        ),
+        onClick: actionNah(NAH_SVG),
         cssClass: "btn-top",
-        textContent: "👎",
+        textContent: nahButtonLabel,
     };
+    const channelButtonLabel = await getFromStorage("channelButtonLabel");
     const channelButton = {
-        onClick: actionNah(
-            "M12 3c-4.96 0-9 4.04-9 9s4.04 9 9 9 9-4.04 9-9-4.04-9-9-9m0-1c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm7 11H5v-2h14v2z"
-        ),
+        onClick: actionNah(CHANNEL_SVG),
         cssClass: "btn-bottom",
-        textContent: "❌",
+        textContent: channelButtonLabel,
     };
     const btnsToAdd = [];
     const shouldHideNahButton = await getFromStorage("shouldHideNahButton");

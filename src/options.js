@@ -9,10 +9,20 @@ document.getElementById("save").addEventListener("click", () => {
     const shouldHideChannelButton = document.getElementById(
         "hide-channel-button"
     ).checked;
+    const nahButtonLabel = document.getElementById("nah-button-label").value;
+    const channelButtonLabel = document.getElementById(
+        "channel-button-label"
+    ).value;
 
     // Save the checkbox value in storage
     storage.sync.set(
-        { isDebuggingEnabled, shouldHideNahButton, shouldHideChannelButton },
+        {
+            isDebuggingEnabled,
+            shouldHideNahButton,
+            shouldHideChannelButton,
+            nahButtonLabel,
+            channelButtonLabel,
+        },
         () => {
             document.getElementById("status").innerHTML = "Settings saved!";
             setTimeout(() => {
@@ -36,5 +46,15 @@ document.addEventListener("DOMContentLoaded", () => {
     storage.sync.get("shouldHideChannelButton", (data) => {
         document.getElementById("hide-channel-button").checked =
             data.shouldHideChannelButton || false;
+    });
+
+    storage.sync.get("nahButtonLabel", (data) => {
+        document.getElementById("nah-button-label").value =
+            data.nahButtonLabel || "👎";
+    });
+
+    storage.sync.get("channelButtonLabel", (data) => {
+        document.getElementById("channel-button-label").value =
+            data.channelButtonLabel || "❌";
     });
 });
