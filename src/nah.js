@@ -74,6 +74,7 @@ async function addNahBtns(videoBoxSelector) {
         onClick: actionNah(NAH_SVG),
         cssClass: "btn-top",
         textContent: nahButtonLabel,
+        title: "Not interested",
     };
     const channelButtonLabel =
         (await getFromStorage("channelButtonLabel")) || "❌";
@@ -81,6 +82,7 @@ async function addNahBtns(videoBoxSelector) {
         onClick: actionNah(CHANNEL_SVG),
         cssClass: "btn-bottom",
         textContent: channelButtonLabel,
+        title: "Don't recommend channel",
     };
     const btnsToAdd = [];
     const shouldHideNahButton = await getFromStorage("shouldHideNahButton");
@@ -105,6 +107,7 @@ async function addNahBtns(videoBoxSelector) {
                 button.classList.add(btnToAdd.cssClass);
                 button.textContent = btnToAdd.textContent;
                 button.onclick = btnToAdd.onClick;
+                button.title = btnToAdd.title;
                 vidBox.appendChild(button);
             });
         }
