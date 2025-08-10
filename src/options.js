@@ -49,11 +49,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     storage.sync.get("nahButtonLabel", (data) => {
-        document.getElementById("nah-button-label").value = data.nahButtonLabel;
+        document.getElementById("nah-button-label").value =
+            data.nahButtonLabel || "👎";
     });
 
     storage.sync.get("channelButtonLabel", (data) => {
         document.getElementById("channel-button-label").value =
-            data.channelButtonLabel;
+            data.channelButtonLabel || "❌";
     });
 });
