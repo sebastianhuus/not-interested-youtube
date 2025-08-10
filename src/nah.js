@@ -69,13 +69,14 @@ async function logger(...data) {
 }
 
 async function addNahBtns(videoBoxSelector) {
-    const nahButtonLabel = await getFromStorage("nahButtonLabel");
+    const nahButtonLabel = (await getFromStorage("nahButtonLabel")) || "👎";
     const nahButton = {
         onClick: actionNah(NAH_SVG),
         cssClass: "btn-top",
         textContent: nahButtonLabel,
     };
-    const channelButtonLabel = await getFromStorage("channelButtonLabel");
+    const channelButtonLabel =
+        (await getFromStorage("channelButtonLabel")) || "❌";
     const channelButton = {
         onClick: actionNah(CHANNEL_SVG),
         cssClass: "btn-bottom",
