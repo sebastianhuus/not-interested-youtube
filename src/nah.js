@@ -321,7 +321,7 @@ function actionNah(svgPath) {
             } finally {
                 popupWrapper.classList.remove("hide-popup");
             }
-        }, 100);
+        }, 50);
 
         return false;
     };
