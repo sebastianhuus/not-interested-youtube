@@ -316,6 +316,11 @@ function actionNah(svgPath) {
                 if (notInterestedBtn) {
                     logger("clicking", notInterestedBtn.textContent.trim());
                     clickInPageRealm(notInterestedBtn);
+
+                    // hide video preview
+                    const videoPreview =
+                        document.querySelector("ytd-video-preview");
+                    videoPreview.hidden = true;
                 } else {
                     logger("could not find notInterestedBtn");
                 }
