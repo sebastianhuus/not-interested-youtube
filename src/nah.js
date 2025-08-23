@@ -227,6 +227,7 @@ function actionNah(svgPath) {
         // prevent popup from appearing when custom button is pressed
         const popupWrapper = document.querySelector("ytd-popup-container");
         popupWrapper.classList.add("hide-popup");
+        logger(popupWrapper);
         const menuButtonSelectors = [
             // subscriptions page
             "#menu #button yt-icon",
@@ -253,7 +254,7 @@ function actionNah(svgPath) {
                     "ytd-menu-popup-renderer #items",
 
                     // homepage, recommended videos
-                    "yt-list-view-model.yt-list-view-model-wiz",
+                    "yt-list-view-model",
                 ];
                 const popupNode = popupWrapper.querySelector(
                     popupSelectors.join(",")
