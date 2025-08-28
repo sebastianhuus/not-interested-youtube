@@ -1,104 +1,28 @@
-// injects a script into the page
-function runInPage(fn, ...args) {
+function ensureBridge() {
+    logger("ensureBridge");
+    if (document.getElementById("ext-bridge")) return;
     const s = document.createElement("script");
-    s.textContent = `(${fn})(...${JSON.stringify(args)});`;
+    s.id = "ext-bridge";
+    s.src = chrome.runtime.getURL("page-bridge.js"); // allowed by CSP
     (document.head || document.documentElement).appendChild(s);
-    s.remove();
+    s.onload = () => s.remove(); // optional cleanup
 }
+
+ensureBridge();
 
 // script to click a button on a page using runInPage
 function clickInPageRealm(button) {
+    logger("clickInPageRealm");
     // add this token to the button so the page script can find it
     const token = Math.random().toString(36).slice(2);
     button.setAttribute("data-ext-target", token);
 
-    runInPage((attr) => {
-        const el = document.querySelector(`[data-ext-target="${attr}"]`);
-        if (!el || !el.isConnected) return;
+    const detail =
+        typeof cloneInto === "function"
+            ? cloneInto({ token }, window) // Firefox: move object into page realm
+            : { token }; // Chromium: plain object is fine
 
-        const touchMode =
-            navigator.maxTouchPoints > 0 || "ontouchstart" in window;
-        if (!touchMode) {
-            el.click();
-            el.removeAttribute("data-ext-target");
-            return;
-        }
-
-        const r = el.getBoundingClientRect();
-        const cx = Math.round(r.left + r.width / 2);
-        const cy = Math.round(r.top + r.height / 2);
-
-        const ptr = (type, init = {}) =>
-            el.dispatchEvent(
-                new PointerEvent(type, {
-                    bubbles: true,
-                    cancelable: true,
-                    composed: true,
-                    isPrimary: true,
-                    pointerId: 1,
-                    pointerType: "touch",
-                    clientX: cx,
-                    clientY: cy,
-                    ...init,
-                })
-            );
-
-        const mouse = (type, init = {}) =>
-            el.dispatchEvent(
-                new MouseEvent(type, {
-                    bubbles: true,
-                    cancelable: true,
-                    composed: true,
-                    button: 0,
-                    buttons: 1,
-                    clientX: cx,
-                    clientY: cy,
-                    ...init,
-                })
-            );
-
-        const tryTouch = (type) => {
-            try {
-                if (!window.Touch || !window.TouchEvent) return;
-                const t = new Touch({
-                    identifier: 1,
-                    target: el,
-                    clientX: cx,
-                    clientY: cy,
-                    pageX: cx,
-                    pageY: cy,
-                    screenX: cx,
-                    screenY: cy,
-                });
-                el.dispatchEvent(
-                    new TouchEvent(type, {
-                        bubbles: true,
-                        cancelable: true,
-                        composed: true,
-                        touches: type === "touchend" ? [] : [t],
-                        targetTouches: type === "touchend" ? [] : [t],
-                        changedTouches: [t],
-                    })
-                );
-            } catch {}
-        };
-
-        // replicating this sequence of events was necessary to get touch events working
-        // pointerdown → touchstart → pointerup → touchend → mousedown → mouseup → click
-        ptr("pointerdown");
-        tryTouch("touchstart");
-
-        // Give frameworks a frame to flip internal flags
-        requestAnimationFrame(() => {
-            ptr("pointerup");
-            tryTouch("touchend");
-            mouse("mousedown");
-            mouse("mouseup");
-            mouse("click");
-
-            el.removeAttribute("data-ext-target");
-        });
-    }, token);
+    window.dispatchEvent(new CustomEvent("ext:activate", { detail }));
 }
 
 const NAH_SVG =
@@ -227,7 +151,6 @@ function actionNah(svgPath) {
         // prevent popup from appearing when custom button is pressed
         const popupWrapper = document.querySelector("ytd-popup-container");
         popupWrapper.classList.add("hide-popup");
-        logger(popupWrapper);
         const menuButtonSelectors = [
             // subscriptions page
             "#menu #button yt-icon",
@@ -259,6 +182,7 @@ function actionNah(svgPath) {
                 const popupNode = popupWrapper.querySelector(
                     popupSelectors.join(",")
                 );
+                logger(popupWrapper);
 
                 if (!popupNode) {
                     logger("Could not find popup menu in DOM");

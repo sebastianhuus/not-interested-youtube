@@ -15,6 +15,12 @@
             "js": ["nah.js"]
         }
     ],
+    "web_accessible_resources": [
+        {
+            "resources": ["page-bridge.js"],
+            "matches": ["https://*.youtube.com/*"]
+        }
+    ],
     "options_ui": {
         "page": "options.html"
     },
