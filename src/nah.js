@@ -72,13 +72,13 @@ const baseStyles = `
 </style>`;
 document.head.insertAdjacentHTML("beforeend", baseStyles);
 
-// browser compatibility
-const storage =
-    typeof browser !== "undefined" ? browser.storage : chrome.storage;
-
 function getFromStorage(key) {
     return new Promise((resolve, reject) => {
-        storage.sync.get(key, (result) => {
+        // browser compatibility
+        (typeof browser !== "undefined"
+            ? browser.storage
+            : chrome.storage
+        ).sync.get(key, (result) => {
             if (chrome.runtime.lastError) {
                 reject(chrome.runtime.lastError);
             } else {
