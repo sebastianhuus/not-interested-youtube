@@ -123,6 +123,9 @@ async function addNahBtns(videoBoxSelector) {
         btnsToAdd.push(channelButton);
     }
 
+    const fontSizeStorage = await getFromStorage("fontSize");
+    const fontSize = fontSizeStorage ? `${fontSizeStorage}px` : null;
+
     try {
         for (const btnToAdd of btnsToAdd) {
             document.querySelectorAll(videoBoxSelector).forEach((vidBox) => {
@@ -135,6 +138,7 @@ async function addNahBtns(videoBoxSelector) {
                 button.textContent = btnToAdd.textContent;
                 button.onclick = btnToAdd.onClick;
                 button.title = btnToAdd.title;
+                if (fontSize) button.style.fontSize = fontSize;
                 vidBox.appendChild(button);
             });
         }

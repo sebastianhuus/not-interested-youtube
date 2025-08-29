@@ -16,11 +16,19 @@
             width: 24px;
             border: none;
         }
+        .wide {
+            width: 48px;
+        }
     </style>
   </head>
 
   <body>
     <h2>Settings</h2>
+    <div class="setting">
+        <label>
+            <input type="text" id="font-size" class="textLabel wide"> Button size (px) - leave blank for default
+        </label>
+    </div>
     <div class="setting">
         <label>
             <input type="checkbox" id="debug-mode"> Enable Debugging
