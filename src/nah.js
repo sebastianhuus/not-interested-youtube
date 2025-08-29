@@ -91,7 +91,7 @@ function getFromStorage(key) {
 async function logger(...data) {
     const isDebuggingEnabled = await getFromStorage("isDebuggingEnabled");
     if (isDebuggingEnabled) {
-        console.log("nah -", ...data);
+        console.log("nah.js -", ...data);
     }
 }
 
@@ -143,6 +143,11 @@ async function addNahBtns(videoBoxSelector) {
     }
 }
 
+function hasMatchingPath(svgElement, targetPath) {
+    const paths = svgElement.querySelectorAll("path");
+    return Array.from(paths).some((p) => p.getAttribute("d") === targetPath);
+}
+
 function actionNah(svgPath) {
     return (event) => {
         event.preventDefault();
@@ -191,8 +196,13 @@ function actionNah(svgPath) {
 
                 let buttonChildIndex;
                 const popupMenuChildren = Array.from(popupNode.children);
+
+                logger("Scanning through popupMenuChildren:");
                 for (let i = 0; i < popupMenuChildren.length; i++) {
                     const childNode = popupMenuChildren[i];
+                    logger(childNode);
+                    logger(childNode.textContent.trim());
+
                     const svgCandidateSelectors = [
                         // subscriptions
                         "ytd-menu-service-item-renderer tp-yt-paper-item yt-icon span div svg",
@@ -204,23 +214,23 @@ function actionNah(svgPath) {
                         svgCandidateSelectors.join(",")
                     );
 
-                    logger(childNode);
-                    logger(childNode.textContent.trim());
                     logger(svgCandidate);
                     if (!svgCandidate) continue;
                     logger(svgCandidate.innerHTML);
 
-                    const isCandidateCorrectButton =
-                        svgCandidate.innerHTML.trim().indexOf(svgPath) !== -1;
+                    const isCandidateCorrectButton = hasMatchingPath(
+                        svgCandidate,
+                        svgPath
+                    );
                     if (isCandidateCorrectButton) {
-                        logger(`found button at index ${i}`);
+                        logger(`found popupMenuChildren button at index ${i}`);
                         buttonChildIndex = i;
                         break;
                     }
                 }
 
                 if (!buttonChildIndex) {
-                    logger("Could not find button in DOM");
+                    logger("Could not find button in popupMenuChildren");
                     return;
                 }
                 // nth-child css selector index is 1-based
@@ -257,3 +267,5 @@ function actionNah(svgPath) {
         return false;
     };
 }
+
+console.log("nah.js ready");
