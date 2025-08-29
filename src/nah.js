@@ -1,11 +1,25 @@
 function ensureBridge() {
     logger("ensureBridge");
-    if (document.getElementById("ext-bridge")) return;
-    const s = document.createElement("script");
-    s.id = "ext-bridge";
-    s.src = chrome.runtime.getURL("page-bridge.js"); // allowed by CSP
-    (document.head || document.documentElement).appendChild(s);
-    s.onload = () => s.remove(); // optional cleanup
+    try {
+        logger(
+            "[EXT] frame?",
+            window === top ? "top" : "iframe",
+            location.href
+        );
+
+        if (document.getElementById("ext-bridge")) return;
+        const s = document.createElement("script");
+        s.addEventListener("error", () =>
+            console.error("[EXT] bridge load error", s.src)
+        );
+        s.addEventListener("load", () => logger("[EXT] bridge loaded", s.src));
+        s.id = "ext-bridge";
+        s.src = chrome.runtime.getURL("page-bridge.js"); // allowed by CSP
+        (document.head || document.documentElement).appendChild(s);
+        s.onload = () => s.remove(); // optional cleanup
+    } catch (e) {
+        console.error("[EXT] bridge inject threw", e);
+    }
 }
 
 ensureBridge();
