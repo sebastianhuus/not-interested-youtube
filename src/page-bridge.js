@@ -1,5 +1,10 @@
-window.addEventListener("ext:activate", (e) => {
-    const { token } = e.detail || {};
+window.__extBridgeReady = true;
+window.dispatchEvent(new Event("ext:bridge-ready"));
+// console.log("nah.js - page-bridge ready");
+
+window.addEventListener("message", (e) => {
+    // console.log("bridge event listener");
+    const { token } = e.data || {};
 
     const el = document.querySelector(`[data-ext-target="${token}"]`);
     if (!el || !el.isConnected) return;

@@ -1,42 +1,56 @@
+const api = typeof browser !== "undefined" ? browser : chrome;
+
 function ensureBridge() {
     logger("ensureBridge");
-    try {
-        logger(
-            "[EXT] frame?",
-            window === top ? "top" : "iframe",
-            location.href
-        );
 
-        if (document.getElementById("ext-bridge")) return;
-        const s = document.createElement("script");
-        s.addEventListener("error", () =>
-            console.error("[EXT] bridge load error", s.src)
-        );
-        s.addEventListener("load", () => logger("[EXT] bridge loaded", s.src));
-        s.id = "ext-bridge";
-        s.src = chrome.runtime.getURL("page-bridge.js"); // allowed by CSP
-        (document.head || document.documentElement).appendChild(s);
-        s.onload = () => s.remove(); // optional cleanup
-    } catch (e) {
-        console.error("[EXT] bridge inject threw", e);
-    }
+    if (window.__extBridgeEnsure) return window.__extBridgeEnsure;
+
+    window.__extBridgeEnsure = new Promise((resolve, reject) => {
+        // already ready?
+        if (window.__extBridgeReady) {
+            logger("bridge ready (cached)");
+            return resolve();
+        }
+
+        const onReady = () => {
+            window.removeEventListener("ext:bridge-ready", onReady);
+            logger("bridge ready (event)");
+            resolve();
+        };
+        window.addEventListener("ext:bridge-ready", onReady, { once: true });
+
+        // inject if not present in this frame
+        if (!document.getElementById("ext-bridge")) {
+            const s = document.createElement("script");
+            s.id = "ext-bridge";
+            s.src = api.runtime.getURL("page-bridge.js"); // exact path/case if in a folder
+            s.addEventListener("load", () => logger("bridge loaded"));
+            s.addEventListener("error", () => {
+                logger("bridge load error", s.src);
+                reject(new Error("bridge load error"));
+            });
+            (document.head || document.documentElement).appendChild(s);
+        }
+    });
+
+    return window.__extBridgeEnsure;
 }
 
-ensureBridge();
+async function activateMenuButton(menuButton) {
+    if (!menuButton || !menuButton.isConnected) {
+        logger("no target");
+        return;
+    }
 
-// script to click a button on a page using runInPage
-function clickInPageRealm(button) {
-    logger("clickInPageRealm");
-    // add this token to the button so the page script can find it
+    await ensureBridge();
+
     const token = Math.random().toString(36).slice(2);
-    button.setAttribute("data-ext-target", token);
+    menuButton.setAttribute("data-ext-target", token);
 
-    const detail =
-        typeof cloneInto === "function"
-            ? cloneInto({ token }, window) // Firefox: move object into page realm
-            : { token }; // Chromium: plain object is fine
-
-    window.dispatchEvent(new CustomEvent("ext:activate", { detail }));
+    // Post to the SAME frame the element is in
+    const frameWin = menuButton.ownerDocument.defaultView || window;
+    // use '*' to handle about:blank/srcdoc
+    frameWin.postMessage({ __ext__: "activate", token }, "*");
 }
 
 const NAH_SVG =
@@ -190,7 +204,7 @@ function actionNah(svgPath) {
             return;
         }
 
-        clickInPageRealm(menuButton);
+        activateMenuButton(menuButton);
 
         // ..wait for popup to render using artificial delay
         setTimeout(async () => {
@@ -267,7 +281,7 @@ function actionNah(svgPath) {
 
                 if (notInterestedBtn) {
                     logger("clicking", notInterestedBtn.textContent.trim());
-                    clickInPageRealm(notInterestedBtn);
+                    activateMenuButton(notInterestedBtn);
 
                     // hide video preview
                     const videoPreview =
@@ -285,5 +299,3 @@ function actionNah(svgPath) {
         return false;
     };
 }
-
-console.log("nah.js ready");
