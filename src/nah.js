@@ -156,7 +156,7 @@ function actionNah(svgPath) {
             "#menu #button yt-icon",
 
             // homepage, recommended videos
-            ".yt-lockup-metadata-view-model-wiz__menu-button button",
+            ".yt-lockup-metadata-view-model__menu-button button",
         ];
         const menuButton = event.target.parentElement.querySelector(
             menuButtonSelectors.join(",")
@@ -198,7 +198,7 @@ function actionNah(svgPath) {
                         "ytd-menu-service-item-renderer tp-yt-paper-item yt-icon span div svg",
 
                         // homepage, recommended videos
-                        ".yt-list-item-view-model-wiz__container svg",
+                        "yt-list-item-view-model svg",
                     ];
                     const svgCandidate = childNode.querySelector(
                         svgCandidateSelectors.join(",")
@@ -209,10 +209,10 @@ function actionNah(svgPath) {
                     logger(svgCandidate);
                     if (!svgCandidate) continue;
                     logger(svgCandidate.innerHTML);
-                    const isCandidateCorrectButton = svgCandidate.innerHTML
-                        .trim()
-                        .indexOf(svgPath);
-                    if (isCandidateCorrectButton !== -1) {
+
+                    const isCandidateCorrectButton =
+                        svgCandidate.innerHTML.trim().indexOf(svgPath) !== -1;
+                    if (isCandidateCorrectButton) {
                         logger(`found button at index ${i}`);
                         buttonChildIndex = i;
                         break;
@@ -249,6 +249,7 @@ function actionNah(svgPath) {
                     logger("could not find notInterestedBtn");
                 }
             } finally {
+                logger("removing hide class from popup wrapper");
                 popupWrapper.classList.remove("hide-popup");
             }
         }, 50);
