@@ -4,6 +4,7 @@ const IS_FIREFOX =
 
 // Inject the bridge by URL (Chromium path; CSP-safe)
 function injectBridgeByUrl() {
+    console.log("injectBridgeByUrl");
     if (window.__extBridgeReady || document.getElementById("ext-bridge"))
         return Promise.resolve();
     return new Promise((resolve, reject) => {
@@ -14,6 +15,22 @@ function injectBridgeByUrl() {
         s.onerror = () => reject(new Error("bridge load error (WAR)"));
         (document.head || document.documentElement).appendChild(s);
     });
+
+    // WIP: the previous commit works on brave, current commit works on firefox. figure out how to get both working
+    // debugger - step through how it's supposed to work on brave
+
+    // // inject if not present in this frame
+    // if (!document.getElementById("ext-bridge")) {
+    //     const s = document.createElement("script");
+    //     s.id = "ext-bridge";
+    //     s.src = api.runtime.getURL("page-bridge.js"); // exact path/case if in a folder
+    //     s.addEventListener("load", () => logger("bridge loaded"));
+    //     s.addEventListener("error", () => {
+    //         logger("bridge load error", s.src);
+    //         reject(new Error("bridge load error"));
+    //     });
+    //     (document.head || document.documentElement).appendChild(s);
+    // }
 }
 
 // Inject the exact same file, but inline (Firefox path; tolerant of about:blank/srcdoc)
