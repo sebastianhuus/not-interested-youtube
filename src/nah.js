@@ -15,24 +15,6 @@ function injectBridgeByUrl() {
         s.onerror = () => reject(new Error("bridge load error (WAR)"));
         (document.head || document.documentElement).appendChild(s);
     });
-
-    // WIP: the previous commit works on brave, current commit works on firefox. figure out how to get both working
-    // debugger - step through how it's supposed to work on brave
-
-    // although honestly, just revert back to clicking directly. fuck touchscreens lmao
-
-    // // inject if not present in this frame
-    // if (!document.getElementById("ext-bridge")) {
-    //     const s = document.createElement("script");
-    //     s.id = "ext-bridge";
-    //     s.src = api.runtime.getURL("page-bridge.js"); // exact path/case if in a folder
-    //     s.addEventListener("load", () => logger("bridge loaded"));
-    //     s.addEventListener("error", () => {
-    //         logger("bridge load error", s.src);
-    //         reject(new Error("bridge load error"));
-    //     });
-    //     (document.head || document.documentElement).appendChild(s);
-    // }
 }
 
 // Inject the exact same file, but inline (Firefox path; tolerant of about:blank/srcdoc)
@@ -55,44 +37,6 @@ async function injectBridgeInlineFromFile() {
     (document.head || document.documentElement).appendChild(s);
     s.remove();
 }
-
-// function ensureBridge() {
-//     logger("ensureBridge");
-
-//     if (window.__extBridgeEnsure) return window.__extBridgeEnsure;
-
-//     window.__extBridgeEnsure = new Promise((resolve, reject) => {
-//         // already ready?
-//         if (window.__extBridgeReady) {
-//             logger("bridge ready (cached)");
-//             return resolve();
-//         }
-
-//         const onReady = () => {
-//             window.removeEventListener("ext:bridge-ready", onReady);
-//             logger("bridge ready (event)");
-//             resolve();
-//         };
-//         window.addEventListener("ext:bridge-ready", onReady, { once: true });
-
-//         // inject if not present in this frame
-//         if (!document.getElementById("ext-bridge")) {
-//             const s = document.createElement("script");
-//             s.id = "ext-bridge";
-//             s.src = api.runtime.getURL("page-bridge.js"); // exact path/case if in a folder
-//             s.addEventListener("load", () => logger("bridge loaded"));
-//             s.addEventListener("error", () => {
-//                 logger("bridge load error", s.src);
-//                 reject(new Error("bridge load error"));
-//             });
-//             (document.head || document.documentElement).appendChild(s);
-//         }
-//     });
-
-//     return window.__extBridgeEnsure;
-// }
-
-// One entry point per frame; picks best method and falls back
 
 async function ensureBridge() {
     logger("ensureBridge");
@@ -129,19 +73,27 @@ async function ensureBridge() {
     await waitReady;
 }
 
-async function activateMenuButton(menuButton) {
-    if (!menuButton || !menuButton.isConnected) {
+async function activateMenuButton(button) {
+    if (!button || !button.isConnected) {
         logger("no target");
+        return;
+    }
+
+    const isTouchscreenEnabled = await getFromStorage("isTouchscreenEnabled");
+
+    if (!isTouchscreenEnabled) {
+        console.log("not touchscreen - click normally");
+        button.click();
         return;
     }
 
     await ensureBridge();
 
     const token = Math.random().toString(36).slice(2);
-    menuButton.setAttribute("data-ext-target", token);
+    button.setAttribute("data-ext-target", token);
 
     // Post to the same frame the element is in
-    const frameWin = menuButton.ownerDocument.defaultView || window;
+    const frameWin = button.ownerDocument.defaultView || window;
     // use '*' to handle about:blank/srcdoc
     frameWin.postMessage({ __ext__: "activate", token }, "*");
 }

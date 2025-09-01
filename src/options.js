@@ -14,6 +14,8 @@ document.getElementById("save").addEventListener("click", () => {
     const channelButtonLabel = document.getElementById(
         "channel-button-label"
     ).value;
+    const isTouchscreenEnabled =
+        document.getElementById("touchscreen-mode").checked;
 
     // Save the checkbox value in storage
     storage.sync.set(
@@ -24,6 +26,7 @@ document.getElementById("save").addEventListener("click", () => {
             shouldHideChannelButton,
             nahButtonLabel,
             channelButtonLabel,
+            isTouchscreenEnabled,
         },
         () => {
             document.getElementById("status").innerHTML = "Settings saved!";
@@ -62,5 +65,10 @@ document.addEventListener("DOMContentLoaded", () => {
     storage.sync.get("channelButtonLabel", (data) => {
         document.getElementById("channel-button-label").value =
             data.channelButtonLabel || "❌";
+    });
+
+    storage.sync.get("isTouchscreenEnabled", (data) => {
+        document.getElementById("touchscreen-mode").checked =
+            data.isTouchscreenEnabled || false;
     });
 });
