@@ -19,6 +19,8 @@ function injectBridgeByUrl() {
     // WIP: the previous commit works on brave, current commit works on firefox. figure out how to get both working
     // debugger - step through how it's supposed to work on brave
 
+    // although honestly, just revert back to clicking directly. fuck touchscreens lmao
+
     // // inject if not present in this frame
     // if (!document.getElementById("ext-bridge")) {
     //     const s = document.createElement("script");

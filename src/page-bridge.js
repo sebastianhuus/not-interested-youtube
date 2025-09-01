@@ -1,11 +1,11 @@
-console.log("page-bridge.js");
+// console.log("page-bridge.js");
 
 // ready handshake
 window.__extBridgeReady = true;
 window.dispatchEvent(new Event("ext:bridge-ready"));
 
 window.addEventListener("message", (e) => {
-    console.log("bridge event listener");
+    // console.log("bridge event listener");
     const { token } = e.data || {};
 
     const el = document.querySelector(`[data-ext-target="${token}"]`);
