@@ -1,39 +1,113 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
+const IS_FIREFOX =
+    typeof browser !== "undefined" && /firefox/i.test(navigator.userAgent);
 
-function ensureBridge() {
+// Inject the bridge by URL (Chromium path; CSP-safe)
+function injectBridgeByUrl() {
+    if (window.__extBridgeReady || document.getElementById("ext-bridge"))
+        return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.id = "ext-bridge";
+        s.src = api.runtime.getURL("page-bridge.js"); // exact path/case
+        s.onload = resolve;
+        s.onerror = () => reject(new Error("bridge load error (WAR)"));
+        (document.head || document.documentElement).appendChild(s);
+    });
+}
+
+// Inject the exact same file, but inline (Firefox path; tolerant of about:blank/srcdoc)
+async function injectBridgeInlineFromFile() {
+    if (
+        window.__extBridgeReady ||
+        document.getElementById("ext-bridge-inline")
+    ) {
+        logger("Script already injected - skipping");
+        return;
+    }
+    const url = api.runtime.getURL("page-bridge.js");
+    const src = await fetch(url).then((r) => {
+        if (!r.ok) throw new Error("bridge fetch failed: " + r.status);
+        return r.text();
+    });
+    const s = document.createElement("script");
+    s.id = "ext-bridge-inline";
+    s.textContent = `${src}\n//# sourceURL=ext-bridge-inline.js`; // handy in devtools
+    (document.head || document.documentElement).appendChild(s);
+    s.remove();
+}
+
+// function ensureBridge() {
+//     logger("ensureBridge");
+
+//     if (window.__extBridgeEnsure) return window.__extBridgeEnsure;
+
+//     window.__extBridgeEnsure = new Promise((resolve, reject) => {
+//         // already ready?
+//         if (window.__extBridgeReady) {
+//             logger("bridge ready (cached)");
+//             return resolve();
+//         }
+
+//         const onReady = () => {
+//             window.removeEventListener("ext:bridge-ready", onReady);
+//             logger("bridge ready (event)");
+//             resolve();
+//         };
+//         window.addEventListener("ext:bridge-ready", onReady, { once: true });
+
+//         // inject if not present in this frame
+//         if (!document.getElementById("ext-bridge")) {
+//             const s = document.createElement("script");
+//             s.id = "ext-bridge";
+//             s.src = api.runtime.getURL("page-bridge.js"); // exact path/case if in a folder
+//             s.addEventListener("load", () => logger("bridge loaded"));
+//             s.addEventListener("error", () => {
+//                 logger("bridge load error", s.src);
+//                 reject(new Error("bridge load error"));
+//             });
+//             (document.head || document.documentElement).appendChild(s);
+//         }
+//     });
+
+//     return window.__extBridgeEnsure;
+// }
+
+// One entry point per frame; picks best method and falls back
+
+async function ensureBridge() {
     logger("ensureBridge");
+    if (window.__extBridgeReady) return;
 
-    if (window.__extBridgeEnsure) return window.__extBridgeEnsure;
-
-    window.__extBridgeEnsure = new Promise((resolve, reject) => {
-        // already ready?
-        if (window.__extBridgeReady) {
-            logger("bridge ready (cached)");
-            return resolve();
-        }
-
+    const waitReady = new Promise((res) => {
+        if (window.__extBridgeReady) return res();
         const onReady = () => {
             window.removeEventListener("ext:bridge-ready", onReady);
-            logger("bridge ready (event)");
-            resolve();
+            res();
         };
         window.addEventListener("ext:bridge-ready", onReady, { once: true });
-
-        // inject if not present in this frame
-        if (!document.getElementById("ext-bridge")) {
-            const s = document.createElement("script");
-            s.id = "ext-bridge";
-            s.src = api.runtime.getURL("page-bridge.js"); // exact path/case if in a folder
-            s.addEventListener("load", () => logger("bridge loaded"));
-            s.addEventListener("error", () => {
-                logger("bridge load error", s.src);
-                reject(new Error("bridge load error"));
-            });
-            (document.head || document.documentElement).appendChild(s);
-        }
     });
 
-    return window.__extBridgeEnsure;
+    try {
+        if (IS_FIREFOX) {
+            console.log("IS_FIREFOX");
+            // Inline first (works even for null-origin frames)
+            await injectBridgeInlineFromFile();
+        } else {
+            console.log("IS_CHROMIUM");
+            // Chromium: URL injection bypasses page CSP
+            await injectBridgeByUrl();
+        }
+    } catch {
+        // Fallback: try the other way round
+        if (IS_FIREFOX) {
+            await injectBridgeByUrl().catch(() => {}); // usually won’t be needed
+        } else {
+            await injectBridgeInlineFromFile().catch(() => {});
+        }
+    }
+
+    await waitReady;
 }
 
 async function activateMenuButton(menuButton) {
@@ -47,7 +121,7 @@ async function activateMenuButton(menuButton) {
     const token = Math.random().toString(36).slice(2);
     menuButton.setAttribute("data-ext-target", token);
 
-    // Post to the SAME frame the element is in
+    // Post to the same frame the element is in
     const frameWin = menuButton.ownerDocument.defaultView || window;
     // use '*' to handle about:blank/srcdoc
     frameWin.postMessage({ __ext__: "activate", token }, "*");
@@ -204,6 +278,7 @@ function actionNah(svgPath) {
             return;
         }
 
+        logger("actionNah pressing button");
         activateMenuButton(menuButton);
 
         // ..wait for popup to render using artificial delay
