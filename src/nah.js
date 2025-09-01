@@ -156,6 +156,7 @@ function actionNah(svgPath) {
 
         // prevent popup from appearing when custom button is pressed
         const popupWrapper = document.querySelector("ytd-popup-container");
+        logger("popupWrapper", popupWrapper);
         popupWrapper.classList.add("hide-popup");
         const menuButtonSelectors = [
             // subscriptions page
@@ -179,6 +180,11 @@ function actionNah(svgPath) {
         // ..wait for popup to render using artificial delay
         setTimeout(async () => {
             try {
+                // when navigating between pages, a new copy of the virtual list is added to popupWrapper children
+                // we want the most recent (i.e. last in the last)
+                const popupWrapperInner = popupWrapper.querySelector(
+                    "tp-yt-iron-dropdown:last-of-type"
+                );
                 const popupSelectors = [
                     // subscriptions
                     "ytd-menu-popup-renderer #items",
@@ -186,10 +192,10 @@ function actionNah(svgPath) {
                     // homepage, recommended videos
                     "yt-list-view-model",
                 ];
-                const popupNode = popupWrapper.querySelector(
+                const popupNode = popupWrapperInner.querySelector(
                     popupSelectors.join(",")
                 );
-                logger("popupWrapper", popupWrapper);
+                logger("popupNode", popupNode);
 
                 if (!popupNode) {
                     logger("Could not find popup menu in DOM");
