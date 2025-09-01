@@ -189,14 +189,14 @@ function actionNah(svgPath) {
                 const popupNode = popupWrapper.querySelector(
                     popupSelectors.join(",")
                 );
-                logger(popupWrapper);
+                logger("popupWrapper", popupWrapper);
 
                 if (!popupNode) {
                     logger("Could not find popup menu in DOM");
                     return;
                 }
 
-                let buttonChildIndex;
+                let buttonChildIndex = -1;
                 const popupMenuChildren = Array.from(popupNode.children);
 
                 logger("Scanning through popupMenuChildren:");
@@ -231,7 +231,7 @@ function actionNah(svgPath) {
                     }
                 }
 
-                if (!buttonChildIndex) {
+                if (buttonChildIndex === -1) {
                     logger("Could not find button in popupMenuChildren");
                     return;
                 }
@@ -245,9 +245,11 @@ function actionNah(svgPath) {
                     // homepage, recommended videos
                     `:nth-child(${buttonChildIndex})`,
                 ];
-                const notInterestedBtn = popupWrapper.querySelector(
+                const notInterestedBtn = popupNode.querySelector(
                     selectors.join(",")
                 );
+                logger("searching", selectors.join(","), popupNode);
+                logger("notInterestedBtn", notInterestedBtn);
 
                 if (notInterestedBtn) {
                     logger("clicking", notInterestedBtn.textContent.trim());
@@ -262,7 +264,7 @@ function actionNah(svgPath) {
                 }
             } finally {
                 logger("removing hide class from popup wrapper");
-                popupWrapper.classList.remove("hide-popup");
+                popupWrapper.classList.remove("hide-popup"); // todo: control with display: none style
             }
         }, 50);
 
