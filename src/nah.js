@@ -22,10 +22,15 @@ async function clickButton(button) {
     frameWin.postMessage({ __ext__: "activate", token }, "*");
 }
 
-const NAH_SVG =
-    "M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1Zm0 2a9 9 0 018.246 12.605L4.755 6.661A8.99 8.99 0 0112 3ZM3.754 8.393l15.491 8.944A9 9 0 013.754 8.393Z";
-const CHANNEL_SVG =
-    "M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1Zm0 2a9 9 0 110 18.001A9 9 0 0112 3Zm4 8H8a1 1 0 000 2h8a1 1 0 000-2Z";
+const LABELS = {
+    nah: "Not interested",
+    channel: "Don't recommend channel",
+};
+const SVG_PATHS = {
+    nah: "M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1Zm0 2a9 9 0 018.246 12.605L4.755 6.661A8.99 8.99 0 0112 3ZM3.754 8.393l15.491 8.944A9 9 0 013.754 8.393Z",
+    channel:
+        "M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1Zm0 2a9 9 0 110 18.001A9 9 0 0112 3Zm4 8H8a1 1 0 000 2h8a1 1 0 000-2Z",
+};
 
 // keep running so when new videos appear, ie. on page scroll, we add button to them as well
 setInterval(() => {
@@ -95,7 +100,7 @@ async function logger(...data) {
 async function addNahBtns(videoBoxSelector) {
     const nahButtonLabel = (await getFromStorage("nahButtonLabel")) || "👎";
     const nahButton = {
-        onClick: actionNah(NAH_SVG),
+        onClick: actionNah("nah"),
         cssClass: "btn-top",
         textContent: nahButtonLabel,
         title: "Not interested",
@@ -103,7 +108,7 @@ async function addNahBtns(videoBoxSelector) {
     const channelButtonLabel =
         (await getFromStorage("channelButtonLabel")) || "❌";
     const channelButton = {
-        onClick: actionNah(CHANNEL_SVG),
+        onClick: actionNah("channel"),
         cssClass: "btn-bottom",
         textContent: channelButtonLabel,
         title: "Don't recommend channel",
@@ -145,11 +150,30 @@ async function addNahBtns(videoBoxSelector) {
 }
 
 function hasMatchingPath(svgElement, targetPath) {
+    if (!svgElement) return false;
     const paths = svgElement.querySelectorAll("path");
     return Array.from(paths).some((p) => p.getAttribute("d") === targetPath);
 }
 
-function actionNah(svgPath) {
+function isMatchingButton(actionType, candidateLabel, candidateSvg) {
+    const isLabelMatch =
+        LABELS[actionType].toLowerCase() === candidateLabel.toLowerCase();
+    if (isLabelMatch) {
+        logger("Label match");
+        return true;
+    }
+
+    const isSvgMatch = hasMatchingPath(candidateSvg, SVG_PATHS[actionType]);
+    logger(`Nope, checking SVGs`);
+    if (isSvgMatch) {
+        logger("SVG match");
+        return true;
+    }
+
+    return false;
+}
+
+function actionNah(actionType) {
     return (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -208,27 +232,28 @@ function actionNah(svgPath) {
                 logger("Scanning through popupMenuChildren:");
                 for (let i = 0; i < popupMenuChildren.length; i++) {
                     const childNode = popupMenuChildren[i];
-                    logger(childNode);
-                    logger(childNode.textContent.trim());
+                    logger(i, childNode);
+                    const candidateLabel = childNode.textContent.trim();
 
-                    const svgCandidateSelectors = [
+                    logger("candidate label:", candidateLabel);
+
+                    const candidateSvgSelectors = [
                         // subscriptions
                         "ytd-menu-service-item-renderer tp-yt-paper-item yt-icon span div svg",
 
                         // homepage, recommended videos
                         "yt-list-item-view-model svg",
                     ];
-                    const svgCandidate = childNode.querySelector(
-                        svgCandidateSelectors.join(",")
+                    const candidateSvg = childNode.querySelector(
+                        candidateSvgSelectors.join(",")
                     );
 
-                    logger(svgCandidate);
-                    if (!svgCandidate) continue;
-                    logger(svgCandidate.innerHTML);
+                    logger("candidate SVG:", candidateSvg);
 
-                    const isCandidateCorrectButton = hasMatchingPath(
-                        svgCandidate,
-                        svgPath
+                    const isCandidateCorrectButton = isMatchingButton(
+                        actionType,
+                        candidateLabel,
+                        candidateSvg
                     );
                     if (isCandidateCorrectButton) {
                         logger(`found popupMenuChildren button at index ${i}`);
@@ -271,6 +296,7 @@ function actionNah(svgPath) {
             } finally {
                 logger("removing hide class from popup wrapper");
                 popupWrapper.classList.remove("hide-popup"); // todo: control with display: none style
+                logger("done");
             }
         }, 50);
 
